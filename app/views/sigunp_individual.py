@@ -132,6 +132,21 @@ async def get_individual_requests(current_user: dict = Depends(get_current_user)
         })
     return pending_requests
 
+# @sigunp_individual_router.get('/get_individuals')
+# async def get_and_delete_accepted_individuals(current_user: dict = Depends(get_current_user)):
+#     if current_user.get('roles') != ['root_user']:
+#         raise HTTPException(status_code=403, detail="You are not authorized to perform this action.")
+    
+#     # Fetch and delete accepted individual records
+#     accepted_individuals = list(db.users.find({"roles": "individual", "status": "Approved"}, {"password": 0}))
+#     for record in accepted_individuals:
+#         # Convert ObjectId to string
+#         record['_id'] = str(record['_id'])
+#         # Delete the accepted individual record from the database
+#         db.users.delete_one({"_id": record['_id']})
+#     return accepted_individuals
+
+
 @sigunp_individual_router.get('/get_individuals')
 async def get_individuals(current_user: dict = Depends(get_current_user)):
     if current_user.get('roles') != ['root_user']:
@@ -229,6 +244,9 @@ async def accept_individual_request(request: Request, current_user: dict = Depen
 
     send_email(email, "Account Created", f"Dear {individual_data['first_name']},\n\nYour account has been created successfully. You can now log in using the provided credentials.\n\nBest regards,\n{settings.company_name}")
 
+    # Remove the individual record from pending requests
+    temp_storage.pop(email, None)
+
     return {"message": "Account created successfully", "status": 200}
 
 @sigunp_individual_router.post('/reject_individual_request')
@@ -250,7 +268,11 @@ async def reject_individual_request(request: Request, current_user: dict = Depen
     rejection_email_body = f"Dear {individual_data['first_name']},\n\nYour account creation request has been rejected by the administrator.\n\nPlease contact the administrator for further details.\n\nBest regards,\n{settings.company_name}"
     send_email(email, "Account Creation Rejected", rejection_email_body)
 
+    # Remove the individual record from pending requests
+    temp_storage.pop(email, None)
+
     return {"message": "Account creation request rejected", "status": 200}
+
 
 @sigunp_individual_router.post('/submit_document')
 async def submit_document(data: dict = Body(...), current_user: dict = Depends(get_current_user)):
