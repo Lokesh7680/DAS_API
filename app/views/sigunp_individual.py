@@ -229,8 +229,10 @@ async def accept_individual_request(request: Request, current_user: dict = Depen
 
     if current_user.get('roles') != ['root_user']:
         raise HTTPException(status_code=403, detail="You are not authorized to perform this action.")
+    
+    print("temp_storage : ",temp_storage)
 
-    individual_data = individual_details.pop(email, None)
+    individual_data = temp_storage.pop(email, None)
     if individual_data is None:
         raise HTTPException(status_code=404, detail="Individual data not found")
 
@@ -238,22 +240,26 @@ async def accept_individual_request(request: Request, current_user: dict = Depen
     password = individual_data["password"]
     hash = hashlib.sha256(password.encode()).hexdigest()
 
+    # Store individual data in the database
     db.users.insert_one({
         "first_name": individual_data['first_name'],
         "last_name": individual_data['last_name'],
         "email": individual_data['email'],
         "password": hash,
         "phone_number": individual_data['phone_number'],
-        "date_of_birth" : individual_data['date_of_birth'],
+        "date_of_birth": individual_data['date_of_birth'],
         "individual_id": individual_id,
-        "roles": individual_data['roles'],
+        "roles": ["individual"],
         "status": "Approved"
     })
 
+    # Notify individual about account creation
     email_body = f"Dear {individual_data['first_name']},\n\nYour account has been created successfully.\n\nHere are your login credentials:\nEmail: {email}\nPassword: {password}\n\nPlease keep your credentials secure and do not share them with anyone.\n\nBest regards,\n{settings.company_name}"
     send_email(email, "Account Created", email_body)
 
-    send_email(email, "Account Created", f"Dear {individual_data['first_name']},\n\nYour account has been created successfully. You can now log in using the provided credentials.\n\nBest regards,\n{settings.company_name}")
+    # Notify root user about account approval
+    root_user_email = "lokesh.ksn@mind-graph.com"  # Replace with root user's email
+    send_email(root_user_email, "Individual Account Approved", f"Dear Root User,\n\nThe individual account creation request for {email} has been approved.\n\nBest regards,\n{settings.company_name}")
 
     # Remove the individual record from pending requests
     temp_storage.pop(email, None)
@@ -272,10 +278,11 @@ async def reject_individual_request(request: Request, current_user: dict = Depen
     if current_user.get('roles') != ['root_user']:
         raise HTTPException(status_code=403, detail="You are not authorized to perform this action.")
 
-    individual_data = individual_details.pop(email, None)
+    individual_data = temp_storage.pop(email, None)
     if individual_data is None:
         raise HTTPException(status_code=404, detail="Individual data not found")
 
+    # Notify individual about account rejection
     rejection_email_body = f"Dear {individual_data['first_name']},\n\nYour account creation request has been rejected by the administrator.\n\nPlease contact the administrator for further details.\n\nBest regards,\n{settings.company_name}"
     send_email(email, "Account Creation Rejected", rejection_email_body)
 
@@ -283,6 +290,7 @@ async def reject_individual_request(request: Request, current_user: dict = Depen
     temp_storage.pop(email, None)
 
     return {"message": "Account creation request rejected", "status": 200}
+
 
 
 @sigunp_individual_router.post('/submit_document')
