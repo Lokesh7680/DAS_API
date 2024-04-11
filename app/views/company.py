@@ -85,6 +85,7 @@ async def create_superadmin(request: Request, current_user: dict = Depends(get_c
         "email": email,  # Change 'branch_email' to 'email'
         "created_by": current_user['company_id'],  # Adding the company_id of the global superadmin
         "roles": ['superadmin'],
+        "phone_number":data.get('phone_number'),
         "password": password,
         "active_status" : "active"
     }
