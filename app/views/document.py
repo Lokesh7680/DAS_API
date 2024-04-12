@@ -110,7 +110,8 @@ async def get_document_details(request: Request, current_user: dict = Depends(ge
             raise HTTPException(status_code=403, detail="Forbidden: Document owner ID not found")
 
         # Check if the current user has permission to access this document
-        if document_owner_id != current_user['user_id']:
+        if document_owner_id != current_user.get('admin_id') and document_owner_id != current_user.get('individual_id'):
+
             raise HTTPException(status_code=403, detail="Forbidden: You do not have access to this document")
 
         eligible_signer_ids = [int(signer['signer_id']) for signer in document.get('signers', []) 
