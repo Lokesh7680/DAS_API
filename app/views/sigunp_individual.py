@@ -291,8 +291,6 @@ async def reject_individual_request(request: Request, current_user: dict = Depen
 
     return {"message": "Account creation request rejected", "status": 200}
 
-
-
 @sigunp_individual_router.post('/submit_document')
 async def submit_document(data: dict = Body(...), current_user: dict = Depends(get_current_user)):
     agreement_name = data.get('agreement_name')
