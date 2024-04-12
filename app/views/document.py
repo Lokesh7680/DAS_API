@@ -274,8 +274,12 @@ async def accept_signer_status(data: dict = Body(...), current_user: dict = Depe
 
             if not next_signer:
                 # All signers have completed, notify the admin
-                email_body = f"Dear Admin,\n\nWe are pleased to inform you that all signatures have been successfully collected for the document : '{document_id}'.\n\nThank you for your attention to this matter. Should you have any further questions or require additional information, please do not hesitate to contact us.\n\nBest regards,\n[Your Name]\n[Your Position/Title]\n[Your Contact Information]"
-                send_email_to_admin(document['admin_id'],email_body)
+                if 'admin_id' in document:
+                    email_body = f"Dear Admin,\n\nWe are pleased to inform you that all signatures have been successfully collected for the document : '{document_id}'.\n\nThank you for your attention to this matter. Should you have any further questions or require additional information, please do not hesitate to contact us.\n\nBest regards,\n[Your Name]\n[Your Position/Title]\n[Your Contact Information]"
+                    send_email_to_admin(document['admin_id'],email_body)
+                elif 'individual_id' in document:
+                    email_body = f"Dear Individual,\n\nWe are pleased to inform you that all signatures have been successfully collected for the document : '{document_id}'.\n\nThank you for your attention to this matter. Should you have any further questions or require additional information, please do not hesitate to contact us.\n\nBest regards,\n[Your Name]\n[Your Position/Title]\n[Your Contact Information]"
+                    send_email_to_individual(document['individual_id'],email_body)
 
                 # After updating the last signer to 'success' and no more signers are in progress
                 # notify_watchers(document_id, f"All signers have completed the signing process for the document. Agreement Name : {document['agreement_name']} , agreement_type : {document['agreement_type']}")

@@ -62,10 +62,11 @@ async def login(request: Request):
             if user['active_status'] == 'inactive':
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
             elif password_hash == user['password']:
+                login_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 db.superadmin_login_history.insert_one({
                     "superadmin_id": user['superadmin_id'],
                     "email": user['email'],
-                    "login_time": datetime.now()
+                    "login_time": login_time
                 })
                 token = create_access_token(email, user['roles'])
                 return {
@@ -81,11 +82,13 @@ async def login(request: Request):
             if user['active_status'] == 'inactive':
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
             elif password_hash == user['password']:
+                login_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 db.global_superadmin_login_history.insert_one({
                     "company_id": user['company_id'],
                     "email": user['email'],
-                    "login_time": datetime.now()
+                    "login_time": login_time
                 })
+                print(login_time)
                 token = create_access_token(email, user['roles'])
                 return {
                     "message": "Global Superadmin login successful",
@@ -129,11 +132,12 @@ async def login(request: Request):
             if user['active_status'] == 'inactive':
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
             elif password_hash == user['password']:
+                login_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 # Insert login history entry
                 db.admin_login_history.insert_one({
                     "admin_id": user['admin_id'],
                     "email": email,
-                    "login_time": datetime.now()
+                    "login_time": login_time
                 })
 
                 token = create_access_token(email, user['roles'])
