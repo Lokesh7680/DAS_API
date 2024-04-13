@@ -8,12 +8,17 @@ from app.utils.db_utils import update_password_in_database, get_user_password
 from app.config import settings
 from app.services.email_service import send_email
 from app.services.otp_service import generate_otp,verify_otp
+from pymongo import MongoClient
 import string
 import random
 import hashlib
 
 reset_password_router = APIRouter()
 otp_storage = {}
+
+mongo_uri = "mongodb+srv://loki_user:loki_password@clmdemo.1yw93ku.mongodb.net/?retryWrites=true&w=majority&appName=Clmdemo"
+client = MongoClient(mongo_uri)
+db = client['CLMDigiSignDB']
 
 def is_same_as_previous_password(email: str, new_password: str) -> bool:
     # Retrieve the previous password from the database
@@ -113,11 +118,13 @@ def get_previous_password(email: str) -> str:
 @reset_password_router.post("/request_otp")
 async def request_password_reset(superadmin_email: str):
     # Generate OTP using the provided function
+    user = db.users.find_one({"email":superadmin_email})
+
     otp = generate_otp(superadmin_email)
     
     # Define email subject and body
     subject = "Password Reset OTP"
-    body = f"Dear Superadmin,\n\nA request to reset your password has been received. To proceed, please use the following One-Time Password (OTP) for verification: {otp}\n\nYour OTP for password reset is: {otp}\n\nPlease ensure to keep this OTP confidential and do not share it with anyone. If you did not request this password reset, please ignore this email.\n\nBest regards,\n{settings.company_name}"
+    body = f"Dear {user['roles']},\n\nA request to reset your password has been received. To proceed, please use the following One-Time Password (OTP) for verification: {otp}\n\nPlease ensure to keep this OTP confidential and do not share it with anyone. If you did not request this password reset, please ignore this email.\n\nBest regards,\n{settings.company_name}"
         
     # Send OTP email
     send_email(superadmin_email, subject, body)
