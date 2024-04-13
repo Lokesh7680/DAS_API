@@ -54,7 +54,7 @@ async def create_superadmin(request: Request, current_user: dict = Depends(get_c
     email = data.get('email')  # Change 'branch_email' to 'email'
 
     # Retrieve the number of branches from the current user
-    number_of_branches = current_user.get('number_of_branches', 0)
+    number_of_branches = int(current_user.get('number_of_branches', 0))
 
     # Check if the number of branches is valid
     if not isinstance(number_of_branches, int) or number_of_branches <= 0:
@@ -74,6 +74,8 @@ async def create_superadmin(request: Request, current_user: dict = Depends(get_c
     # Store the OTP for the creator global superadmin in the database
     otp_expiry = datetime.now() + timedelta(minutes=5)  # Set expiry time for OTP
     db.otps.insert_one({"email": current_user['email'], "otp": creator_global_superadmin_otp, "expiry": otp_expiry})
+
+    send_email(current_user['email'], "OTP Verification", f"Dear Global Superadmin,\n\nAn OTP has been generated for your account creation. Your One-Time Password (OTP) for verification is: {creator_global_superadmin_otp}\n\nKindly use this OTP to complete the creation process.\n\nBest regards,\n[Your Company Name]")
 
     # Temporarily store the creator global superadmin OTP
     temp_storage[current_user['email']] = creator_global_superadmin_otp
@@ -110,7 +112,6 @@ async def create_superadmin(request: Request, current_user: dict = Depends(get_c
         temp_storage[email] = superadmin_data
 
     return {"message": "OTPs sent to creator global superadmin and superadmins for verification", "status code": 200}
-
 
 @superadmin_router.post('/verify_superadmin_creation_otp')
 async def verify_superadmin_creation_otp(request: Request, current_user: dict = Depends(get_current_user)):
