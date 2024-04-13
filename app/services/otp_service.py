@@ -29,7 +29,7 @@ def verify_otp(email, otp_input):
     print(1)
     print(email)
     record = db.otps.find_one({"email": email})
-    print(record)
+    print("record : ",record)
     if record and datetime.now() < record['expiry']:
         print("time true")
         if record['otp'] == int(otp_input):
