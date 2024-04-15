@@ -120,21 +120,6 @@ async def upload_photo(request: Request, current_user: dict = Depends(get_curren
     )
     return {"message": "Photo uploaded successfully", "status": 200}
 
-
-# @signer_router.post('/upload_govt_id')
-# async def upload_govt_id(request: Request, current_user: dict = Depends(get_current_user)):
-#     data = await request.json()
-#     signer_id = data.get('signer_id')
-#     govt_id_string = data.get('govt_id')
-#     document_id = data.get('document_id')
-
-#     db.signerdocuments.update_one(
-#         {"signer_id": signer_id, "document_id": document_id},
-#         {"$set": {"govt_id": govt_id_string}},
-#         upsert=True
-#     )
-#     return {"message": "Government ID uploaded successfully", "status": 200}
-
 @signer_router.post('/upload_govt_id')
 async def upload_govt_id(request: Request, current_user: dict = Depends(get_current_user)):
     data = await request.json()

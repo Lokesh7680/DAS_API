@@ -52,40 +52,6 @@ async def get_document(request: Request, current_user: dict = Depends(get_curren
         return {"document_base64": document['document_base64']}
     else:
         raise HTTPException(status_code=404, detail="Document not found")
-    
-# @documents_router.get('/get_document_details')
-# async def get_document_details(request: Request, current_user: dict = Depends(get_current_user)):
-#     document_id = request.query_params.get('document_id')
-
-#     if not document_id:
-#         raise HTTPException(status_code=400, detail="Document ID is required")
-
-#     try:
-#         document_id_int = int(document_id)
-
-#         document = db.documents.find_one({"document_id": document_id_int}, {"_id": 0})
-#         if not document:
-#             raise HTTPException(status_code=404, detail="Document not found")
-
-#         # Check if the current admin has permission to access this document
-#         if document['admin_id'] != current_user['admin_id']:
-#             raise HTTPException(status_code=403, detail="Forbidden: You do not have access to this document")
-
-#         eligible_signer_ids = [int(signer['signer_id']) for signer in document.get('signers', []) 
-#                                if signer.get('status') in ['submitted', 'success']]
-
-#         signer_documents = list(db.signerdocuments.find({"signer_id": {"$in": eligible_signer_ids}, "document_id": document_id_int}, {"_id": 0}))
-
-#         # Modify signer_documents to include is_image field
-#         for signer_document in signer_documents:
-#             signer_document['is_image'] = signer_document.get('is_image', False)
-
-#         return {
-#             "document_details": document,
-#             "signer_documents": signer_documents
-#         }
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
 
 @documents_router.get('/get_document_details')
 async def get_document_details(request: Request, current_user: dict = Depends(get_current_user)):
@@ -131,83 +97,83 @@ async def get_document_details(request: Request, current_user: dict = Depends(ge
         raise HTTPException(status_code=500, detail=str(e))
 
     
-@documents_router.post('/accept_signer_status_individual')
-async def accept_signer_status(data: dict = Body(...), current_user: dict = Depends(get_current_user)):
-    document_id = data.get('document_id')
-    signer_id = data.get('signer_id')
-    action = data.get('action')
+# @documents_router.post('/accept_signer_status_individual')
+# async def accept_signer_status(data: dict = Body(...), current_user: dict = Depends(get_current_user)):
+#     document_id = data.get('document_id')
+#     signer_id = data.get('signer_id')
+#     action = data.get('action')
 
-    if not document_id or not signer_id or not action:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Document ID, Signer ID, and Action are required")
+#     if not document_id or not signer_id or not action:
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Document ID, Signer ID, and Action are required")
 
-    try:
-        document_id_int = int(document_id)
-        signer_id_int = int(signer_id)
-        document = db.signerdocuments.find_one({"document_id": document_id_int, "signer_id": signer_id_int})
+#     try:
+#         document_id_int = int(document_id)
+#         signer_id_int = int(signer_id)
+#         document = db.signerdocuments.find_one({"document_id": document_id_int, "signer_id": signer_id_int})
 
-        print("DEBUG: document =", document)  # Print document for debugging
+#         print("DEBUG: document =", document)  # Print document for debugging
 
-        if not document:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document or signer document not found")
+#         if not document:
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document or signer document not found")
 
-        # signed_document = document.get('signed_document')
-        signed_document = document['signed_document']
+#         # signed_document = document.get('signed_document')
+#         signed_document = document['signed_document']
 
-        # Update the status of the current signer
-        if action == 'accept':
-            db.documents.update_one(
-                {"document_id": document_id_int, "signers.signer_id": signer_id_int},   
-                {"$set": {"signers.$.status": "success", "document_base64": signed_document}}
-            )
-            email_body = f"Dear Signer,\n\nWe are writing to inform you that your signature has been successfully verified. This confirmation marks an important milestone in our document signing process.\n\nYour cooperation and prompt response have been greatly appreciated throughout this verification process. If you have any questions or require further assistance, please feel free to contact us.\n\nThank you for your attention to this matter.\n\nBest regards,\n[Your Name]\n[Your Position/Title]\n[Your Contact Information]"
-            send_email_to_signer(signer_id_int,email_body)
+#         # Update the status of the current signer
+#         if action == 'accept':
+#             db.documents.update_one(
+#                 {"document_id": document_id_int, "signers.signer_id": signer_id_int},   
+#                 {"$set": {"signers.$.status": "success", "document_base64": signed_document}}
+#             )
+#             email_body = f"Dear Signer,\n\nWe are writing to inform you that your signature has been successfully verified. This confirmation marks an important milestone in our document signing process.\n\nYour cooperation and prompt response have been greatly appreciated throughout this verification process. If you have any questions or require further assistance, please feel free to contact us.\n\nThank you for your attention to this matter.\n\nBest regards,\n[Your Name]\n[Your Position/Title]\n[Your Contact Information]"
+#             send_email_to_signer(signer_id_int,email_body)
 
-            print("document_id_int:",document_id_int)
-            # Find the next signer in order and update their status to 'in_progress'
-            document = db.documents.find_one({"document_id": document_id_int})
-            print("document :",document)
+#             print("document_id_int:",document_id_int)
+#             # Find the next signer in order and update their status to 'in_progress'
+#             document = db.documents.find_one({"document_id": document_id_int})
+#             print("document :",document)
 
-            watchers = document['watchers']
-            print("watchers",watchers)
+#             watchers = document['watchers']
+#             print("watchers",watchers)
 
-            signer_name = ''
-            if document and 'signers' in document:
-                for signer in document['signers']:
-                    if signer.get('signer_id') == signer_id:
-                        signer_name = signer.get('name')
-            next_signer = find_next_signer(document, signer_id_int)
-            print("next_signer:",next_signer)
+#             signer_name = ''
+#             if document and 'signers' in document:
+#                 for signer in document['signers']:
+#                     if signer.get('signer_id') == signer_id:
+#                         signer_name = signer.get('name')
+#             next_signer = find_next_signer(document, signer_id_int)
+#             print("next_signer:",next_signer)
 
-            # if not next_signer:
-            #     return 
+#             # if not next_signer:
+#             #     return 
 
-            if next_signer:
-                db.documents.update_one(
-                    {"document_id": document_id_int, "signers.signer_id": next_signer['signer_id']},
-                    {"$set": {"signers.$.status": "in_progress"}}
-                )
-                initiate_signing_for_signer(document_id_int, next_signer['signer_id'])
+#             if next_signer:
+#                 db.documents.update_one(
+#                     {"document_id": document_id_int, "signers.signer_id": next_signer['signer_id']},
+#                     {"$set": {"signers.$.status": "in_progress"}}
+#                 )
+#                 initiate_signing_for_signer(document_id_int, next_signer['signer_id'])
 
-                # After accepting or rejecting a signer's document
-                signer = db.users.find_one({"signer_id": signer_id_int})
-                print(signer)
-                # Notify watchers with a professional email format
-                notify_watchers(document_id, f"Dear Team,\n\nWe are pleased to inform you that the document, which required signature from {signer_name}, has been {action}ed by the administration.\n\nThank you for your attention to this matter.\n\nBest regards,\nThe Document Management Team")
+#                 # After accepting or rejecting a signer's document
+#                 signer = db.users.find_one({"signer_id": signer_id_int})
+#                 print(signer)
+#                 # Notify watchers with a professional email format
+#                 notify_watchers(document_id, f"Dear Team,\n\nWe are pleased to inform you that the document, which required signature from {signer_name}, has been {action}ed by the administration.\n\nThank you for your attention to this matter.\n\nBest regards,\nThe Document Management Team")
 
-            if not next_signer:
-                # All signers have completed, notify the admin
-                email_body = f"Dear Individual,\n\nWe are pleased to inform you that all signatures have been successfully collected for the document : '{document_id}'.\n\nThank you for your attention to this matter. Should you have any further questions or require additional information, please do not hesitate to contact us.\n\nBest regards,\n[Your Name]\n[Your Position/Title]\n[Your Contact Information]"
-                send_email_to_individual(document['individual_id'],email_body)
+#             if not next_signer:
+#                 # All signers have completed, notify the admin
+#                 email_body = f"Dear Individual,\n\nWe are pleased to inform you that all signatures have been successfully collected for the document : '{document_id}'.\n\nThank you for your attention to this matter. Should you have any further questions or require additional information, please do not hesitate to contact us.\n\nBest regards,\n[Your Name]\n[Your Position/Title]\n[Your Contact Information]"
+#                 send_email_to_individual(document['individual_id'],email_body)
 
-                # After updating the last signer to 'success' and no more signers are in progress
-                # notify_watchers(document_id, f"All signers have completed the signing process for the document. Agreement Name : {document['agreement_name']} , agreement_type : {document['agreement_type']}")
-                notify_watchers_signing_completed(watchers, document['agreement_name'], document['agreement_type'])
-                return 
-        return {"message": "Signer status updated successfully", "status": 200}
+#                 # After updating the last signer to 'success' and no more signers are in progress
+#                 # notify_watchers(document_id, f"All signers have completed the signing process for the document. Agreement Name : {document['agreement_name']} , agreement_type : {document['agreement_type']}")
+#                 notify_watchers_signing_completed(watchers, document['agreement_name'], document['agreement_type'])
+#                 return 
+#         return {"message": "Signer status updated successfully", "status": 200}
 
-    except Exception as e:
-        print("An error occurred:", e)  # Print error message for debugging
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error occurred")
+#     except Exception as e:
+#         print("An error occurred:", e)  # Print error message for debugging
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error occurred")
     
 @documents_router.post('/accept_signer_status')
 async def accept_signer_status(data: dict = Body(...), current_user: dict = Depends(get_current_user)):

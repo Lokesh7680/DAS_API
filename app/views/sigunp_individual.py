@@ -142,22 +142,6 @@ async def get_individual_requests(current_user: dict = Depends(get_current_user)
             })
     return verified_requests
 
-
-# @sigunp_individual_router.get('/get_individuals')
-# async def get_and_delete_accepted_individuals(current_user: dict = Depends(get_current_user)):
-#     if current_user.get('roles') != ['root_user']:
-#         raise HTTPException(status_code=403, detail="You are not authorized to perform this action.")
-    
-#     # Fetch and delete accepted individual records
-#     accepted_individuals = list(db.users.find({"roles": "individual", "status": "Approved"}, {"password": 0}))
-#     for record in accepted_individuals:
-#         # Convert ObjectId to string
-#         record['_id'] = str(record['_id'])
-#         # Delete the accepted individual record from the database
-#         db.users.delete_one({"_id": record['_id']})
-#     return accepted_individuals
-
-
 @sigunp_individual_router.get('/get_individuals')
 async def get_individuals(current_user: dict = Depends(get_current_user)):
     if current_user.get('roles') != ['root_user']:
@@ -170,53 +154,6 @@ async def get_individuals(current_user: dict = Depends(get_current_user)):
         record['_id'] = str(record['_id'])
         individuals.append(record)
     return individuals
-
-# Route to accept or reject individual account request (for root user)
-# @sigunp_individual_router.post('/accept_reject_individual_request')
-# async def accept_reject_individual_request(request: Request,current_user: dict = Depends(get_current_user)):
-#     data = await request.json()
-#     email = data.get('email')
-#     is_accepted = data.get('is_accepted')
-
-#     if current_user.get('roles') != ['root_user']:
-#         raise HTTPException(status_code=403, detail="You are not authorized to perform this action.")
-    
-#     # Fetch the stored data from temporary storage
-#     individual_data = individual_details.pop(email, None)
-#     if individual_data is None:
-#         raise HTTPException(status_code=404, detail="Individual data not found")
-
-#     if is_accepted:
-#         # Hash the password
-#         individual_id = get_next_sequence(db, 'individual_id')       
-#         password = individual_data["password"]
-#         hash = hashlib.sha256(password.encode()).hexdigest()
-
-#         # Create the individual user in the database
-#         db.users.insert_one({
-#             "first_name": individual_data['first_name'],
-#             "last_name": individual_data['last_name'],
-#             "email": individual_data['email'],
-#             "password": hash,
-#             "phone_number": individual_data['phone_number'],
-#             "date_of_birth" : individual_data['date_of_birth'],
-#             "individual_id": individual_id,
-#             "roles": individual_data['roles'],
-#             "status": "Approved"
-#         })
-
-#         # Send email to individual with credentials
-#         email_body = f"Dear {individual_data['first_name']},\n\nYour account has been created successfully.\n\nHere are your login credentials:\nEmail: {email}\nPassword: {password}\n\nPlease keep your credentials secure and do not share them with anyone.\n\nBest regards,\n{settings.company_name}"
-#         send_email(email, "Account Created", email_body)
-
-#         # Notify individual about approval
-#         send_email(email, "Account Created", f"Dear {individual_data['first_name']},\n\nYour account has been created successfully. You can now log in using the provided credentials.\n\nBest regards,\n{settings.company_name}")
-
-#         return {"message": "Account created successfully", "status": 200}
-#     else:
-#         # Notify individual about rejection
-#         send_email(email, "Account Creation Rejected", f"Dear {individual_data['first_name']},\n\nYour account creation request has been rejected by the administrator.\n\nPlease contact the administrator for further details.\n\nBest regards,\n{settings.company_name}")
-#         return {"message": "Account creation request rejected", "status": 200}
 
 @sigunp_individual_router.post('/accept_individual_request')
 async def accept_individual_request(request: Request, current_user: dict = Depends(get_current_user)):
