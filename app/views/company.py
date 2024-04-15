@@ -163,8 +163,10 @@ async def create_superadmin(request: Request, current_user: dict = Depends(get_c
     # Send OTP to the superadmin
     send_email(email, "OTP Verification", f"Dear Superadmin,\n\nAn OTP has been generated for your account creation. Your One-Time Password (OTP) for verification is: {superadmin_otp}\n\nKindly use this OTP to complete the creation process.\n\nBest regards,\n[Your Company Name]")
 
+    superadmin_id = get_next_sequence(db,"superadminid")
     # Store the superadmin data in temp_storage
     superadmin_data = {
+        "superadmin_id" : superadmin_id,
         "branch_name": "Branch",  # You may customize the branch name as needed
         "address": data.get('address'),
         "manager_name": data.get('manager_name'),
@@ -283,6 +285,8 @@ async def update_superadmin_status(request: Request, current_user: dict = Depend
     superadmin = db.users.find_one({"superadmin_id": superadmin_id})
     if not superadmin:
         raise HTTPException(status_code=404, detail="Superadmin not found")
+    
+    print("superadmin : ",superadmin)
 
     # Retrieve the current superadmin status
     old_status = superadmin['active_status']
