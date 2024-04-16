@@ -11,7 +11,6 @@ import jwt
 from app.config import Settings
 from fastapi.security import OAuth2PasswordBearer
 import hashlib
-from datetime import timedelta, datetime
 
 # Define API router
 sigunp_individual_router = APIRouter()
